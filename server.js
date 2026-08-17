@@ -1,37 +1,19 @@
+
 const WebSocket = require("ws");
 
 const server = new WebSocket.Server({ port: 8080 });
 
-wss.on("connection", (ws, req) => {
+server.on("connection", (socket) => {
+  console.log("Client connected");
 
-    console.log("✅ Client Connected :", req.socket.remoteAddress);
+  socket.on("message", (message) => {
+    console.log("Received:", message.toString());
+    socket.send(message.toString());
+  });
 
-    ws.on("message", (message) => {
-
-        const text = message.toString();
-
-        console.log("📩 Received :", text);
-
-        // Sender ko chhodkar sab clients ko bhejo
-        wss.clients.forEach((client) => {
-
-            if (
-                client !== ws &&
-                client.readyState === WebSocket.OPEN
-            ) {
-                client.send(text);
-            }
-
-        });
-
-    });
-
-    ws.on("close", () => {
-        console.log("❌ Client Disconnected");
-    });
-
-    ws.on("error", (err) => {
-        console.log("🔥 Error :", err.message);
-    });
-
+  socket.on("close", () => {
+    console.log("Client disconnected");
+  });
 });
+
+console.log("WebSocket server running on port 8080");
