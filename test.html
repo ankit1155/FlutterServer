@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 30px;
+        }
+
+        input {
+            width: 350px;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-left: 10px;
+        }
+
+        #messages {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            height: 350px;
+            overflow-y: auto;
+        }
+
+        .sent {
+            color: blue;
+            margin: 5px 0;
+        }
+
+        .received {
+            color: green;
+            margin: 5px 0;
+        }
+
+        .status {
+            color: orange;
+            margin: 5px 0;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<h2>HTML WebSocket Client</h2>
+
+<input
+    type="text"
+    id="txtMessage"
+    placeholder="Enter Message">
+
+<button onclick="sendMessage()">
+    Send
+</button>
+
+<div id="messages"></div>
+
+<script>
+
+const socket = new WebSocket("wss://flutterserver-by1c.onrender.com");
+
+const messages = document.getElementById("messages");
+
+socket.onopen = function () {
+
+    addStatus("✅ Connected");
+
+};
+
+socket.onmessage = function (event) {
+
+    addReceived(event.data);
+
+};
+
+socket.onclose = function () {
+
+    addStatus("❌ Disconnected");
+
+};
+
+socket.onerror = function () {
+
+    addStatus("Socket Error");
+
+};
+
+function sendMessage() {
+
+    const txt = document.getElementById("txtMessage");
+
+    if (txt.value.trim() === "") return;
+
+    socket.send(txt.value);
+
+    addSent(txt.value);
+
+    txt.value = "";
+}
+
+function addSent(msg) {
+
+    messages.innerHTML +=
+        `<div class="sent"><b>Sent :</b> ${msg}</div>`;
+
+    scrollBottom();
+}
+
+function addReceived(msg) {
+
+    messages.innerHTML +=
+        `<div class="received"><b>Received :</b> ${msg}</div>`;
+
+    scrollBottom();
+}
+
+function addStatus(msg) {
+
+    messages.innerHTML +=
+        `<div class="status">${msg}</div>`;
+
+    scrollBottom();
+}
+
+function scrollBottom() {
+
+    messages.scrollTop = messages.scrollHeight;
+
+}
+
+</script>
+
+</body>
+
+</html>
