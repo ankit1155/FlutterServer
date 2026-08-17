@@ -1,16 +1,6 @@
-const { WebSocketServer, WebSocket } = require("ws");
+const WebSocket = require("ws");
 
-const PORT = 8080;
-
-const wss = new WebSocketServer({
-    host: "0.0.0.0",
-    port: PORT,
-});
-
-console.log("==================================");
-console.log("WebSocket Server Started");
-console.log(`Listening on ws://0.0.0.0:${PORT}`);
-console.log("==================================");
+const server = new WebSocket.Server({ port: 8080 });
 
 wss.on("connection", (ws, req) => {
 
