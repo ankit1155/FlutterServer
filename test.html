@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>WebSocket Test</title>
+    <title>WebSocket Image Test</title>
 
     <style>
         body {
@@ -12,36 +12,44 @@
         }
 
         input {
-            width: 350px;
             padding: 10px;
+            margin: 5px 0;
         }
 
         button {
             padding: 10px 20px;
-            margin-left: 10px;
+            margin: 5px;
         }
 
         #messages {
             margin-top: 20px;
             border: 1px solid #ccc;
             padding: 15px;
-            height: 350px;
+            height: 400px;
             overflow-y: auto;
         }
 
         .sent {
             color: blue;
-            margin: 5px 0;
+            margin: 10px 0;
         }
 
         .received {
             color: green;
-            margin: 5px 0;
+            margin: 10px 0;
         }
 
         .status {
             color: orange;
-            margin: 5px 0;
+            margin: 10px 0;
+        }
+
+        .chat-image {
+            max-width: 300px;
+            max-height: 300px;
+            display: block;
+            margin-top: 5px;
+            border-radius: 8px;
         }
     </style>
 
@@ -49,93 +57,253 @@
 
 <body>
 
-<h2>HTML WebSocket Client</h2>
+    <h2>HTML WebSocket Client</h2>
 
-<input
-    type="text"
-    id="txtMessage"
-    placeholder="Enter Message">
+    <!-- Text message -->
+    <input
+        type="text"
+        id="txtMessage"
+        placeholder="Enter Message">
 
-<button onclick="sendMessage()">
-    Send
-</button>
+    <button onclick="sendMessage()">
+        Send
+    </button>
 
-<div id="messages"></div>
+    <br>
 
-<script>
+    <!-- Image -->
+    <input
+        type="file"
+        id="imageInput"
+        accept="image/*">
 
-const socket = new WebSocket("wss://flutterserver-by1c.onrender.com");
+    <button onclick="sendImage()">
+        Send Image
+    </button>
 
-const messages = document.getElementById("messages");
+    <div id="messages"></div>
 
-socket.onopen = function () {
 
-    addStatus("✅ Connected");
+    <script>
 
-};
+        const socket = new WebSocket(
+            "wss://flutterserver-by1c.onrender.com"
+        );
 
-socket.onmessage = function (event) {
+        const messages = document.getElementById("messages");
 
-    addReceived(event.data);
 
-};
+        // =========================
+        // SOCKET CONNECTED
+        // =========================
 
-socket.onclose = function () {
+        socket.onopen = function () {
 
-    addStatus("❌ Disconnected");
+            addStatus("✅ Connected");
 
-};
+        };
 
-socket.onerror = function () {
 
-    addStatus("Socket Error");
+        // =========================
+        // RECEIVE MESSAGE
+        // =========================
 
-};
+        socket.onmessage = function (event) {
 
-function sendMessage() {
+            console.log("Received:", event.data);
 
-    const txt = document.getElementById("txtMessage");
+            // Check if received data is image
+            if (event.data instanceof Blob) {
 
-    if (txt.value.trim() === "") return;
+                showReceivedImage(event.data);
 
-    socket.send(txt.value);
+            } else {
 
-    addSent(txt.value);
+                addReceived(event.data);
 
-    txt.value = "";
-}
+            }
 
-function addSent(msg) {
+        };
 
-    messages.innerHTML +=
-        `<div class="sent"><b>Sent :</b> ${msg}</div>`;
 
-    scrollBottom();
-}
+        // =========================
+        // SOCKET CLOSE
+        // =========================
 
-function addReceived(msg) {
+        socket.onclose = function () {
 
-    messages.innerHTML +=
-        `<div class="received"><b>Received :</b> ${msg}</div>`;
+            addStatus("❌ Disconnected");
 
-    scrollBottom();
-}
+        };
 
-function addStatus(msg) {
 
-    messages.innerHTML +=
-        `<div class="status">${msg}</div>`;
+        // =========================
+        // SOCKET ERROR
+        // =========================
 
-    scrollBottom();
-}
+        socket.onerror = function () {
 
-function scrollBottom() {
+            addStatus("❌ Socket Error");
 
-    messages.scrollTop = messages.scrollHeight;
+        };
 
-}
 
-</script>
+        // =========================
+        // SEND TEXT
+        // =========================
+
+        function sendMessage() {
+
+            const txt = document.getElementById("txtMessage");
+
+            if (txt.value.trim() === "") {
+                return;
+            }
+
+            socket.send(txt.value);
+
+            addSent(txt.value);
+
+            txt.value = "";
+
+        }
+
+
+        // =========================
+        // SEND IMAGE
+        // =========================
+
+        function sendImage() {
+
+            const input = document.getElementById("imageInput");
+
+            if (input.files.length === 0) {
+
+                alert("Please select an image");
+
+                return;
+            }
+
+            const file = input.files[0];
+
+            console.log("Image:", file.name);
+            console.log("Size:", file.size);
+            console.log("Type:", file.type);
+
+
+            // Read image as ArrayBuffer
+            const reader = new FileReader();
+
+            reader.onload = function () {
+
+                const arrayBuffer = reader.result;
+
+                // Send image bytes
+                socket.send(arrayBuffer);
+
+                addSentImage(file);
+
+            };
+
+            reader.readAsArrayBuffer(file);
+
+        }
+
+
+        // =========================
+        // SHOW SENT IMAGE
+        // =========================
+
+        function addSentImage(file) {
+
+            const url = URL.createObjectURL(file);
+
+            messages.innerHTML += `
+                <div class="sent">
+                    <b>Sent Image:</b>
+                    <br>
+                    <img
+                        src="${url}"
+                        class="chat-image">
+                </div>
+            `;
+
+            scrollBottom();
+
+        }
+
+
+        // =========================
+        // SHOW RECEIVED IMAGE
+        // =========================
+
+        function showReceivedImage(blob) {
+
+            const url = URL.createObjectURL(blob);
+
+            messages.innerHTML += `
+                <div class="received">
+                    <b>Received Image:</b>
+                    <br>
+                    <img
+                        src="${url}"
+                        class="chat-image">
+                </div>
+            `;
+
+            scrollBottom();
+
+        }
+
+
+        // =========================
+        // TEXT UI
+        // =========================
+
+        function addSent(msg) {
+
+            messages.innerHTML +=
+                `<div class="sent">
+                    <b>Sent :</b> ${msg}
+                </div>`;
+
+            scrollBottom();
+
+        }
+
+
+        function addReceived(msg) {
+
+            messages.innerHTML +=
+                `<div class="received">
+                    <b>Received :</b> ${msg}
+                </div>`;
+
+            scrollBottom();
+
+        }
+
+
+        function addStatus(msg) {
+
+            messages.innerHTML +=
+                `<div class="status">
+                    ${msg}
+                </div>`;
+
+            scrollBottom();
+
+        }
+
+
+        function scrollBottom() {
+
+            messages.scrollTop =
+                messages.scrollHeight;
+
+        }
+
+    </script>
 
 </body>
 
