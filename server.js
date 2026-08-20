@@ -5,10 +5,45 @@ const server = new WebSocket.Server({
 });
 
 server.on("connection", (socket) => {
+
   console.log("🟢 Client connected");
 
-  socket.on("message", (message) => {
+
+  socket.on("message", (message, isBinary) => {
+
     try {
+
+      // ============================
+      // IMAGE / BINARY DATA
+      // ============================
+
+      if (isBinary) {
+
+        console.log("🖼️ Image received");
+        console.log("Image size:", message.length, "bytes");
+
+
+        // Send image to all connected clients
+        server.clients.forEach((client) => {
+
+          if (client.readyState === WebSocket.OPEN) {
+
+            client.send(message, {
+              binary: true
+            });
+
+          }
+
+        });
+
+        return;
+      }
+
+
+      // ============================
+      // TEXT / JSON MESSAGE
+      // ============================
+
       const data = JSON.parse(message.toString());
 
       console.log("📩 Received:");
@@ -16,24 +51,49 @@ server.on("connection", (socket) => {
       console.log("Login ID:", data.loginId);
       console.log("Chat ID:", data.chatId);
 
-      // Send message to all connected clients
+
+      // Send JSON message to all clients
       server.clients.forEach((client) => {
+
         if (client.readyState === WebSocket.OPEN) {
+
           client.send(JSON.stringify(data));
+
         }
+
       });
+
     } catch (error) {
-      console.log("❌ Invalid JSON:", message.toString());
+
+      console.log("❌ Error:", error.message);
+
     }
+
   });
+
+
+  // ============================
+  // CLIENT DISCONNECTED
+  // ============================
 
   socket.on("close", () => {
+
     console.log("🔴 Client disconnected");
+
   });
 
+
+  // ============================
+  // SOCKET ERROR
+  // ============================
+
   socket.on("error", (error) => {
+
     console.log("❌ Socket error:", error.message);
+
   });
+
 });
+
 
 console.log("🚀 WebSocket server running on port 8080");
